@@ -57,7 +57,7 @@ impl Invocation {
                     .long("query")
                     .help("a language and query to perform")
                     .long_help(
-                        "a language and query to perform (at least one is required.) See https://tree-sitter.github.io for information on writing queries. Run tree-grepper --languages for a list of languages.",
+                        "language and query to perform (at least one is required.) See https://tree-sitter.github.io for information on writing queries. Run tree-grepper --languages for a list of languages.",
                     )
                     .number_of_values(2)
                     .value_names(["LANGUAGE", "QUERY"])
