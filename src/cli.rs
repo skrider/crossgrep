@@ -52,34 +52,43 @@ impl Invocation {
             .version(crate_version!())
             .author(crate_authors!())
             .arg(
-                Arg::new("additional-query")
-                    .short('q')
-                    .long("query")
-                    .help("a language and query to perform")
-                    .long_help(
-                        "language and query to perform (at least one is required.) See https://tree-sitter.github.io for information on writing queries. Run tree-grepper --languages for a list of languages.",
-                    )
+                Arg::new("additional-target")
+                    .short('t')
+                    .long("target")
+                    .help("a language and tree-sitter query to restrict semantic search to")
+                    .long_help("a language and tree-sitter query to restrict semantic search to")
                     .number_of_values(2)
-                    .value_names(["LANGUAGE", "QUERY"])
+                    .value_name(["LANGUAGE", "TARGET"])
+                    .required_unless_present("languages")
+                    .required_unless_present("show-tree")
+                    .conflicts_with("languages")
+                    .conflicts_with("show-tree")
+                    .action(ArgAction::Append),
+            )
+            .arg(
+                Arg::new("query")
+                    .last(true)
+                    .number_of_values(1..)
+                    .value_name("QUERY")
                     .required_unless_present("languages")
                     .required_unless_present("show-tree")
                     .conflicts_with("languages")
                     .conflicts_with("show-tree")
                     .num_args(1..)
-                    .action(ArgAction::Append)
+                    .action(ArgAction::Append),
             )
             .arg(
                 Arg::new("no-gitignore")
                     .long("no-gitignore")
                     .help("don't use git's ignore and exclude files to filter files")
                     .conflicts_with("languages")
-                    .conflicts_with("show-tree")
+                    .conflicts_with("show-tree"),
             )
             .arg(
                 Arg::new("PATHS")
                     .default_value(".")
                     .help("places to search for matches")
-                    .num_args(1..)
+                    .num_args(1..),
             )
             .arg(
                 Arg::new("FORMAT")
@@ -89,15 +98,7 @@ impl Invocation {
                     .default_value("lines")
                     .help("what format should we output lines in?")
                     .conflicts_with("languages")
-                    .conflicts_with("show-tree")
-            )
-            .arg(
-                Arg::new("sort")
-                    .long("sort")
-                    .help("sort matches stably")
-                    .long_help("sort matches stably. If this is not specified, output ordering will vary because due to parallelism. Caution: this adds a worst-case `O(n * log(n))` overhead, where `n` is the number of files matched. Avoid it if possible if you care about performance.")
-                    .conflicts_with("languages")
-                    .conflicts_with("show-tree")
+                    .conflicts_with("show-tree"),
             )
             .arg(
                 Arg::new("languages")
@@ -105,7 +106,7 @@ impl Invocation {
                     .action(ArgAction::SetTrue)
                     .help("print the language names tree-grepper knows about")
                     .conflicts_with("additional-query")
-                    .conflicts_with("show-tree")
+                    .conflicts_with("show-tree"),
             )
             .arg(
                 Arg::new("show-tree")
@@ -114,7 +115,7 @@ impl Invocation {
                     .value_names(["LANGUAGE"])
                     .action(ArgAction::Append)
                     .conflicts_with("languages")
-                    .conflicts_with("additional-query")
+                    .conflicts_with("additional-query"),
             )
             .try_get_matches_from(args)
             .context("could not parse args")?;
@@ -150,7 +151,7 @@ impl Invocation {
     }
 
     fn extractors(matches: &ArgMatches) -> Result<Vec<Extractor>> {
-        let values = match matches.get_many::<String>("additional-query") {
+        let values = match matches.get_many::<String>("additional-target") {
             Some(values) => values,
             None => bail!("queries were required but not provided. This indicates an internal error and you should report it!"),
         };
