@@ -3,6 +3,7 @@ mod extractor;
 mod extractor_chooser;
 mod language;
 mod tree_view;
+mod chunker;
 
 use anyhow::{bail, Context, Result};
 use cli::{Invocation, QueryFormat, QueryOpts, TreeOpts};
@@ -121,10 +122,6 @@ fn do_query(opts: QueryOpts, mut out: impl Write) -> Result<()> {
         })
         .collect::<Result<Vec<extractor::ExtractedFile>>>()
         .context("couldn't extract matches from files")?;
-
-    if opts.sort {
-        extracted_files.sort()
-    }
 
     match opts.format {
         QueryFormat::Lines => {

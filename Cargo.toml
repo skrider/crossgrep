@@ -2,7 +2,7 @@
 name = "softgrep"
 version = "2.5.0-pre"
 authors = ["Stephen Krider <skrider@berkeley.edu>", "Brian Hicks <brian@brianthicks.com>"]
-edition = "2024"
+edition = "2018"
 
 [dependencies]
 anyhow = "1.0.79"

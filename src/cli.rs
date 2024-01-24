@@ -20,7 +20,6 @@ pub struct QueryOpts {
     pub paths: Vec<PathBuf>,
     pub git_ignore: bool,
     pub format: QueryFormat,
-    pub sort: bool,
 }
 
 impl QueryOpts {
@@ -58,23 +57,11 @@ impl Invocation {
                     .help("a language and tree-sitter query to restrict semantic search to")
                     .long_help("a language and tree-sitter query to restrict semantic search to")
                     .number_of_values(2)
-                    .value_name(["LANGUAGE", "TARGET"])
+                    .value_names(["LANGUAGE", "TARGET"])
                     .required_unless_present("languages")
                     .required_unless_present("show-tree")
                     .conflicts_with("languages")
                     .conflicts_with("show-tree")
-                    .action(ArgAction::Append),
-            )
-            .arg(
-                Arg::new("query")
-                    .last(true)
-                    .number_of_values(1..)
-                    .value_name("QUERY")
-                    .required_unless_present("languages")
-                    .required_unless_present("show-tree")
-                    .conflicts_with("languages")
-                    .conflicts_with("show-tree")
-                    .num_args(1..)
                     .action(ArgAction::Append),
             )
             .arg(
@@ -104,8 +91,8 @@ impl Invocation {
                 Arg::new("languages")
                     .long("languages")
                     .action(ArgAction::SetTrue)
-                    .help("print the language names tree-grepper knows about")
-                    .conflicts_with("additional-query")
+                    .help("print the language names softgrep knows about")
+                    .conflicts_with("additional-target")
                     .conflicts_with("show-tree"),
             )
             .arg(
@@ -115,7 +102,19 @@ impl Invocation {
                     .value_names(["LANGUAGE"])
                     .action(ArgAction::Append)
                     .conflicts_with("languages")
-                    .conflicts_with("additional-query"),
+                    .conflicts_with("additional-target"),
+            )
+            .arg(
+                Arg::new("QUERY")
+                    .last(true)
+                    .number_of_values(1)
+                    .value_name("QUERY")
+                    .required_unless_present("languages")
+                    .required_unless_present("show-tree")
+                    .conflicts_with("languages")
+                    .conflicts_with("show-tree")
+                    .num_args(1..)
+                    .action(ArgAction::Append),
             )
             .try_get_matches_from(args)
             .context("could not parse args")?;
@@ -145,7 +144,6 @@ impl Invocation {
                         .context("format not provided")?,
                 )
                 .context("could not set format")?,
-                sort: matches.contains_id("sort"),
             }))
         }
     }

@@ -6,7 +6,7 @@ use std::collections::HashSet;
 use std::fmt::{self, Display};
 use std::fs;
 use std::path::{Path, PathBuf};
-use tree_sitter::{Parser, Point, Query, QueryCursor};
+use tree_sitter::{Parser, Tree, Point, Query, QueryCursor};
 
 #[derive(Debug)]
 pub struct Extractor {
@@ -65,6 +65,14 @@ impl Extractor {
             .set_language(self.ts_language)
             .context("could not set language")?;
 
+        let line_ct = source.iter().fold(0, |acc, c| {
+            if *c == '\n' as u8 {
+                acc + 1
+            } else {
+                acc
+            }
+        });
+
         let tree = parser
             .parse(source, None)
             // note: this could be a timeout or cancellation, but we don't set
@@ -74,6 +82,18 @@ impl Extractor {
             .context(
                 "could not parse to a tree. This is an internal error and should be reported.",
             )?;
+        
+        let mut node_terminals = vec![0; line_ct];
+        // construct map of line numbers to nodes ending on that line
+        for node in TreeWalker::new(&tree) {
+            let node_start = node.start_position();
+            let start_line = node_start.row;
+            let node_end = node.end_position();
+            let end_line = node_end.row;
+            if start_line != end_line {
+                node_terminals[end_line] += 1;
+            }
+        }
 
         let mut cursor = QueryCursor::new();
 
@@ -173,6 +193,26 @@ where
     out.serialize_field("row", &(point.row + 1))?;
     out.serialize_field("column", &(point.column + 1))?;
     out.end()
+}
+
+struct TreeWalker<'walker> {
+    cursor: tree_sitter::TreeCursor<'walker>,
+}
+
+impl<'walker> TreeWalker<'walker> {
+    fn new(tree: &'walker Tree) -> Self {
+        Self {
+            cursor: tree.walk(),
+        }
+    }
+}
+
+impl<'walker> Iterator for TreeWalker<'walker> {
+    type Item = tree_sitter::Node<'walker>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        None
+    }
 }
 
 #[cfg(test)]
