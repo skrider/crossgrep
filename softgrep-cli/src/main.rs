@@ -15,8 +15,8 @@ use std::fs;
 use std::io::{self, BufWriter, Write};
 use tree_sitter::Parser;
 
-#[global_allocator]
-static ALLOCATOR: bump_alloc::BumpAlloc = bump_alloc::BumpAlloc::new();
+// #[global_allocator]
+// static ALLOCATOR: bump_alloc::BumpAlloc = bump_alloc::BumpAlloc::new();
 
 fn main() {
     let mut buffer = BufWriter::new(io::stdout());
