@@ -13,9 +13,9 @@ pub struct Chunker {
 }
 
 impl Chunker {
-    fn from_model(model: Model) -> Self {
+    fn from_model(model: &Model) -> Self {
         Chunker {
-            model,
+            model: (*model).clone(),
             tokenizer: model.tokenizer(),
             chunk_size: model.chunk_size(),
             inner_chunk_size: model.chunk_size()

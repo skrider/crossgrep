@@ -1,8 +1,7 @@
-use softgrep_langauges::Language;
-use crate::model::Model;
 use anyhow::{Context, Result};
 use serde::ser::{SerializeStruct, Serializer};
 use serde::Serialize;
+use softgrep_languages::Language;
 use std::collections::HashSet;
 use std::fmt::{self, Display};
 use std::fs;
@@ -92,7 +91,6 @@ impl Extractor {
                 "could not parse to a tree. This is an internal error and should be reported.",
             )?;
 
-        
         let mut cursor = QueryCursor::new();
 
         let extracted_matches = cursor
@@ -116,8 +114,6 @@ impl Extractor {
                     Ok(text) => text,
                     Err(problem) => return Err(problem),
                 };
-
-                let input_ids = self.tokenizer.encode()
 
                 Ok(ExtractedMatch {
                     kind: node.kind(),

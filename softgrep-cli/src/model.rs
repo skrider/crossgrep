@@ -1,12 +1,13 @@
 use anyhow::{bail, Result};
 use tokenizers::tokenizer::Tokenizer;
 
+#[derive(Clone, Copy, Debug)]
 pub enum Model {
     CodeBert,
 }
 
 impl Model {
-    pub fn from_str(identifier: &str) -> Result<Self> {
+    pub fn from_pretrained(identifier: &str) -> Result<Self> {
         match identifier {
             "codebert" => Ok(Model::CodeBert),
             _ => bail!("unsupported model: {}", identifier),
