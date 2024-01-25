@@ -4,6 +4,8 @@ use tokenizers::tokenizer::Tokenizer;
 #[derive(Clone, Copy, Debug)]
 pub enum Model {
     CodeBert,
+    // wide model for testing purposes
+    Noop,
 }
 
 impl Model {
@@ -23,10 +25,13 @@ impl Model {
                     input_ids.push(*i);
                 }
                 input_ids.push(2);
-                for i in 0..(self.chunk_size() - self.special_tokens() - ids.len()) {
+                for _ in 0..(self.chunk_size() - self.special_tokens() - ids.len()) {
                     input_ids.push(1);
                 }
                 assert!(input_ids.len() == self.chunk_size());
+            }
+            Model::Noop => {
+                input_ids.clone_from_slice(ids);
             }
         }
     }
@@ -34,18 +39,21 @@ impl Model {
     pub fn chunk_size(&self) -> usize {
         match self {
             Model::CodeBert => 512,
+            Model::Noop => usize::MAX,
         }
     }
 
     pub fn chunk_overlap(&self) -> usize {
         match self {
             Model::CodeBert => 64,
+            Model::Noop => 0,
         }
     }
 
     pub fn special_tokens(&self) -> usize {
         match self {
             Model::CodeBert => 2,
+            Model::Noop => 0,
         }
     }
 
@@ -53,7 +61,8 @@ impl Model {
     pub fn tokenizer(&self) -> Tokenizer {
         Tokenizer::from_pretrained(
             match self {
-                Model::CodeBert => "microsoft/codebert-base",
+                Model::CodeBert => "roberta-base",
+                Model::Noop => "roberta-base",
             },
             None,
         )

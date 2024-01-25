@@ -6,29 +6,23 @@ use std::collections::HashSet;
 use std::fmt::{self, Display};
 use std::fs;
 use std::path::{Path, PathBuf};
-use tokenizers::tokenizer::Tokenizer;
-use tree_sitter::{Parser, Point, Query, QueryCursor, Tree};
+use tree_sitter::{Parser, Point, Query, QueryCursor};
+
+use crate::chunker::{Chunker, ExtractedChunk};
+use crate::model::Model;
 
 #[derive(Debug)]
 pub struct Extractor {
     language: Language,
     ts_language: tree_sitter::Language,
     query: Query,
-    tokenizer: Tokenizer,
+    chunker: Chunker,
     captures: Vec<String>,
     ignores: HashSet<usize>,
-    chunk_size: usize,
-    chunk_overlap: usize,
 }
 
 impl Extractor {
-    pub fn new(
-        language: Language,
-        query: Query,
-        tokenizer: &String,
-        chunk_size: usize,
-        chunk_overlap: usize,
-    ) -> Extractor {
+    pub fn new(language: Language, query: Query, model: Model) -> Extractor {
         let captures = query.capture_names().to_vec();
 
         let mut ignores = HashSet::default();
@@ -42,18 +36,13 @@ impl Extractor {
             eprintln!("Warning: query only has ignored captures. No results will be printed.");
         }
 
-        let tokenizer =
-            Tokenizer::from_pretrained(tokenizer, None).expect("could not load tokenizer");
-
         Extractor {
             ts_language: language.language(),
-            tokenizer,
+            chunker: Chunker::from_model(model),
             language,
             query,
             captures,
             ignores,
-            chunk_size,
-            chunk_overlap,
         }
     }
 
@@ -101,29 +90,37 @@ impl Extractor {
             // since even the gnarliest queries I've written have something on
             // the order of 20 matches. Nowhere close to 2^16!
             .filter(|capture| !self.ignores.contains(&(capture.index as usize)))
-            .map(|capture| {
+            .filter_map(|capture| {
                 let name = &self.captures[capture.index as usize];
                 let node = capture.node;
+                let node_source = &source[node.byte_range()];
 
-                let utf8 = node.utf8_text(source).unwrap();
-                let text = match node
-                    .utf8_text(source)
-                    .map(|unowned| unowned.to_string())
-                    .context("could not extract text from capture")
-                {
-                    Ok(text) => text,
-                    Err(problem) => return Err(problem),
+                let chunks = match self.chunker.chunk_node(node_source, &node) {
+                    Ok(chunks) => chunks,
+                    Err(e) => {
+                        eprintln!(
+                            "warning: tokenization for {} failed: {}",
+                            path.map(|p| p.to_path_buf().into_os_string().into_string().unwrap())
+                                .unwrap_or(String::from("stdin")),
+                            e
+                        );
+                        return None;
+                    }
                 };
 
-                Ok(ExtractedMatch {
+                // we already check for valid utf-8 in chunker
+                let text = std::str::from_utf8(node_source).unwrap().to_string();
+
+                Some(ExtractedMatch {
                     kind: node.kind(),
                     name,
                     text,
                     start: node.start_position(),
                     end: node.end_position(),
+                    chunks,
                 })
             })
-            .collect::<Result<Vec<ExtractedMatch>>>()?;
+            .collect::<Vec<ExtractedMatch>>();
 
         if extracted_matches.is_empty() {
             Ok(None)
@@ -181,6 +178,7 @@ pub struct ExtractedMatch<'query> {
     start: Point,
     #[serde(serialize_with = "serialize_point")]
     end: Point,
+    chunks: Vec<ExtractedChunk>,
 }
 
 fn serialize_point<S>(point: &Point, sz: S) -> Result<S::Ok, S::Error>
@@ -199,23 +197,13 @@ mod tests {
     use softgrep_languages::Language;
     use tree_sitter::Parser;
 
-    static MODEL_IDENTIFIER: &str = "roberta-base";
-    static CHUNK_SIZE: usize = 512;
-    static CHUNK_OVERLAP: usize = 128;
-
     #[test]
     fn test_matches_are_extracted() {
         let lang = Language::Elm;
         let query = lang
             .parse_query("(import_clause (upper_case_qid)@import)")
             .unwrap();
-        let extractor = Extractor::new(
-            lang,
-            query,
-            &String::from(MODEL_IDENTIFIER),
-            CHUNK_SIZE,
-            CHUNK_OVERLAP,
-        );
+        let extractor = Extractor::new(lang, query, Model::Noop);
 
         let extracted = extractor
             .extract_from_text(None, b"import Html.Styled", &mut Parser::new())
@@ -235,13 +223,7 @@ mod tests {
         let query = lang
             .parse_query("(import_clause (upper_case_qid)@_import)")
             .unwrap();
-        let extractor = Extractor::new(
-            lang,
-            query,
-            &String::from(MODEL_IDENTIFIER),
-            CHUNK_SIZE,
-            CHUNK_OVERLAP,
-        );
+        let extractor = Extractor::new(lang, query, Model::Noop);
 
         let extracted = extractor
             .extract_from_text(None, b"import Html.Styled", &mut Parser::new())
@@ -257,13 +239,7 @@ mod tests {
         let query = lang
             .parse_query("(call_expression (identifier)@_fn (arguments . (string)@import .) (#eq? @_fn require))")
             .unwrap();
-        let extractor = Extractor::new(
-            lang,
-            query,
-            &String::from(MODEL_IDENTIFIER),
-            CHUNK_SIZE,
-            CHUNK_OVERLAP,
-        );
+        let extractor = Extractor::new(lang, query, Model::Noop);
 
         let extracted = extractor
             .extract_from_text(None, b"let foo = require(\"foo.js\")", &mut Parser::new())

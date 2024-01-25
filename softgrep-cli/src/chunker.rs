@@ -1,8 +1,10 @@
 use crate::model::Model;
 use anyhow::{bail, Result};
+use serde::Serialize;
 use tokenizers::tokenizer::Tokenizer;
 use tree_sitter::Node;
 
+#[derive(Debug)]
 pub struct Chunker {
     tokenizer: Tokenizer,
     model: Model,
@@ -13,9 +15,9 @@ pub struct Chunker {
 }
 
 impl Chunker {
-    fn from_model(model: &Model) -> Self {
+    pub fn from_model(model: Model) -> Self {
         Chunker {
-            model: (*model).clone(),
+            model: model.clone(),
             tokenizer: model.tokenizer(),
             chunk_size: model.chunk_size(),
             inner_chunk_size: model.chunk_size()
@@ -26,8 +28,8 @@ impl Chunker {
         }
     }
 
-    fn chunk_node(&self, source: &[u8], node: &Node) -> Result<Vec<ExtractedChunk>> {
-        let source = &source[node.byte_range()];
+    pub fn chunk_node(&self, source: &[u8], node: &Node) -> Result<Vec<ExtractedChunk>> {
+        assert!(source.len() == node.end_byte() - node.start_byte());
 
         let source_str = std::str::from_utf8(source).expect("invalid utf-8");
         let encoding = match self.tokenizer.encode(source_str, false) {
@@ -37,7 +39,7 @@ impl Chunker {
         let ids = encoding.get_ids();
 
         if ids.len() < self.chunk_size - self.model.special_tokens() {
-            let mut tokens = Vec::with_capacity(self.chunk_size);
+            let mut tokens = Vec::new();
             self.model.prepare_input_ids(&mut tokens, ids);
 
             return Ok(vec![ExtractedChunk {
@@ -51,13 +53,12 @@ impl Chunker {
             .iter()
             .fold(0, |acc, c| if *c == '\n' as u8 { acc + 1 } else { acc });
 
-        let mut node_terminals = vec![0; line_ct];
+        let mut node_terminals = vec![0; line_ct + 1];
+        let start_line = node.start_position().row;
         // construct map of line numbers to nodes ending on that line
-        for node in TreeWalker::from_node(node) {
-            let node_start = node.start_position();
-            let start_line = node_start.row;
-            let node_end = node.end_position();
-            let end_line = node_end.row;
+        for n in TreeWalker::from_node(node) {
+            let end_line = n.end_position().row - start_line;
+            let start_line = n.start_position().row - start_line;
             if start_line != end_line {
                 node_terminals[end_line] += 1;
             }
@@ -133,6 +134,7 @@ impl Chunker {
                     start_byte,
                     end_byte,
                 });
+                eprintln!("chunk added");
 
                 is_first_chunk = 0;
                 chunk_line_start = chunk_line_end;
@@ -170,8 +172,8 @@ impl Chunker {
     }
 }
 
-#[derive(Debug, Default)]
-struct ExtractedChunk {
+#[derive(Debug, Serialize, PartialEq, Eq, PartialOrd, Ord)]
+pub struct ExtractedChunk {
     pub ids: Vec<u32>,
     pub start_byte: usize,
     pub end_byte: usize,
