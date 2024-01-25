@@ -121,6 +121,8 @@ impl Extractor {
             .map(|capture| {
                 let name = &self.captures[capture.index as usize];
                 let node = capture.node;
+
+                let utf8 = node.utf8_text(source).unwrap();
                 let text = match node
                     .utf8_text(source)
                     .map(|unowned| unowned.to_string())
@@ -129,6 +131,8 @@ impl Extractor {
                     Ok(text) => text,
                     Err(problem) => return Err(problem),
                 };
+
+                let input_ids = self.tokenizer.encode()
 
                 Ok(ExtractedMatch {
                     kind: node.kind(),
@@ -208,42 +212,13 @@ where
     out.end()
 }
 
-struct TreeWalker<'walker> {
-    cursor: tree_sitter::TreeCursor<'walker>,
-}
-
-impl<'walker> TreeWalker<'walker> {
-    fn new(tree: &'walker Tree) -> Self {
-        Self {
-            cursor: tree.walk(),
-        }
-    }
-}
-
-impl<'walker> Iterator for TreeWalker<'walker> {
-    type Item = tree_sitter::Node<'walker>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.cursor.goto_first_child() {
-            Some(self.cursor.node())
-        } else {
-            while !self.cursor.goto_next_sibling() {
-                if !self.cursor.goto_parent() {
-                    ()
-                }
-            }
-            Some(self.cursor.node())
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::language::Language;
     use tree_sitter::Parser;
 
-    static MODEL_IDENTIFIER: String = String::from("roberta-base");
+    static MODEL_IDENTIFIER: &str = "roberta-base";
     static CHUNK_SIZE: usize = 512;
     static CHUNK_OVERLAP: usize = 128;
 
@@ -253,7 +228,13 @@ mod tests {
         let query = lang
             .parse_query("(import_clause (upper_case_qid)@import)")
             .unwrap();
-        let extractor = Extractor::new(lang, query, &MODEL_IDENTIFIER, CHUNK_SIZE, CHUNK_OVERLAP);
+        let extractor = Extractor::new(
+            lang,
+            query,
+            &String::from(MODEL_IDENTIFIER),
+            CHUNK_SIZE,
+            CHUNK_OVERLAP,
+        );
 
         let extracted = extractor
             .extract_from_text(None, b"import Html.Styled", &mut Parser::new())
@@ -273,7 +254,13 @@ mod tests {
         let query = lang
             .parse_query("(import_clause (upper_case_qid)@_import)")
             .unwrap();
-        let extractor = Extractor::new(lang, query, &MODEL_IDENTIFIER, CHUNK_SIZE, CHUNK_OVERLAP);
+        let extractor = Extractor::new(
+            lang,
+            query,
+            &String::from(MODEL_IDENTIFIER),
+            CHUNK_SIZE,
+            CHUNK_OVERLAP,
+        );
 
         let extracted = extractor
             .extract_from_text(None, b"import Html.Styled", &mut Parser::new())
@@ -289,7 +276,13 @@ mod tests {
         let query = lang
             .parse_query("(call_expression (identifier)@_fn (arguments . (string)@import .) (#eq? @_fn require))")
             .unwrap();
-        let extractor = Extractor::new(lang, query, &MODEL_IDENTIFIER, CHUNK_SIZE, CHUNK_OVERLAP);
+        let extractor = Extractor::new(
+            lang,
+            query,
+            &String::from(MODEL_IDENTIFIER),
+            CHUNK_SIZE,
+            CHUNK_OVERLAP,
+        );
 
         let extracted = extractor
             .extract_from_text(None, b"let foo = require(\"foo.js\")", &mut Parser::new())

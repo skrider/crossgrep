@@ -165,7 +165,7 @@ impl Invocation {
             };
 
             Ok(Self::DoQuery(QueryOpts {
-                extractors: Self::extractors(&matches, model_identifier)?,
+                extractors: Self::extractors(&matches)?,
                 paths: Self::paths(&matches)?,
                 git_ignore: !matches.contains_id("no-gitignore"),
                 format: QueryFormat::from_str(
@@ -178,7 +178,7 @@ impl Invocation {
         }
     }
 
-    fn extractors(matches: &ArgMatches, model_identifier: &String) -> Result<Vec<Extractor>> {
+    fn extractors(matches: &ArgMatches) -> Result<Vec<Extractor>> {
         let values = match matches.get_many::<String>("additional-target") {
             Some(values) => values,
             None => bail!("queries were required but not provided. This indicates an internal error and you should report it!"),
