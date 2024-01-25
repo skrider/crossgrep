@@ -1273,12 +1273,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "softgrep"
+name = "softgrep-cli"
 version = "2.5.0-pre"
 dependencies = [
  "anyhow",
  "bump_alloc",
- "cc",
  "clap",
  "crossbeam",
  "ignore",
@@ -1286,11 +1285,23 @@ dependencies = [
  "rayon",
  "serde",
  "serde_json",
+ "softgrep-languages",
  "strum",
  "strum_macros",
  "tokenizers",
  "tree-sitter",
  "trycmd",
+]
+
+[[package]]
+name = "softgrep-languages"
+version = "2.5.0-pre"
+dependencies = [
+ "anyhow",
+ "cc",
+ "strum",
+ "strum_macros",
+ "tree-sitter",
 ]
 
 [[package]]

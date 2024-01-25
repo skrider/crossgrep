@@ -96,21 +96,21 @@
           mkdir vendor
 
           set -x
-          ln -s ${inputs.tree-sitter-c} vendor/tree-sitter-c
-          ln -s ${inputs.tree-sitter-cpp} vendor/tree-sitter-cpp
-          ln -s ${inputs.tree-sitter-elixir} vendor/tree-sitter-elixir
-          ln -s ${inputs.tree-sitter-elm} vendor/tree-sitter-elm
-          ln -s ${inputs.tree-sitter-go} vendor/tree-sitter-go
-          ln -s ${inputs.tree-sitter-haskell} vendor/tree-sitter-haskell
-          ln -s ${inputs.tree-sitter-java} vendor/tree-sitter-java
-          ln -s ${inputs.tree-sitter-javascript} vendor/tree-sitter-javascript
-          ln -s ${inputs.tree-sitter-markdown} vendor/tree-sitter-markdown
-          ln -s ${inputs.tree-sitter-php} vendor/tree-sitter-php
-          ln -s ${inputs.tree-sitter-python} vendor/tree-sitter-python
-          ln -s ${inputs.tree-sitter-ruby} vendor/tree-sitter-ruby
-          ln -s ${inputs.tree-sitter-rust} vendor/tree-sitter-rust
-          ln -s ${inputs.tree-sitter-typescript} vendor/tree-sitter-typescript
-          ln -s ${inputs.tree-sitter-nix} vendor/tree-sitter-nix
+          ln -s ${inputs.tree-sitter-c} softgrep-languages/vendor/tree-sitter-c
+          ln -s ${inputs.tree-sitter-cpp} softgrep-languages/vendor/tree-sitter-cpp
+          ln -s ${inputs.tree-sitter-elixir} softgrep-languages/vendor/tree-sitter-elixir
+          ln -s ${inputs.tree-sitter-elm} softgrep-languages/vendor/tree-sitter-elm
+          ln -s ${inputs.tree-sitter-go} softgrep-languages/vendor/tree-sitter-go
+          ln -s ${inputs.tree-sitter-haskell} softgrep-languages/vendor/tree-sitter-haskell
+          ln -s ${inputs.tree-sitter-java} softgrep-languages/vendor/tree-sitter-java
+          ln -s ${inputs.tree-sitter-javascript} softgrep-languages/vendor/tree-sitter-javascript
+          ln -s ${inputs.tree-sitter-markdown} softgrep-languages/vendor/tree-sitter-markdown
+          ln -s ${inputs.tree-sitter-php} softgrep-languages/vendor/tree-sitter-php
+          ln -s ${inputs.tree-sitter-python} softgrep-languages/vendor/tree-sitter-python
+          ln -s ${inputs.tree-sitter-ruby} softgrep-languages/vendor/tree-sitter-ruby
+          ln -s ${inputs.tree-sitter-rust} softgrep-languages/vendor/tree-sitter-rust
+          ln -s ${inputs.tree-sitter-typescript} softgrep-languages/vendor/tree-sitter-typescript
+          ln -s ${inputs.tree-sitter-nix} softgrep-languages/vendor/tree-sitter-nix
         '';
       in rec {
         # `nix build`

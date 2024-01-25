@@ -1,7 +1,7 @@
 [package]
-name = "softgrep"
+name = "softgrep-cli"
 version = "2.5.0-pre"
-authors = ["Stephen Krider <skrider@berkeley.edu>", "Brian Hicks <brian@brianthicks.com>"]
+authors = ["Stephen Krider <skrider@berkeley.edu>"]
 edition = "2018"
 
 [dependencies]
@@ -18,9 +18,7 @@ strum = "0.25"
 strum_macros = "0.25"
 tokenizers = { version = "0.15.1", features = [ "http" ] }
 tree-sitter = "0.20.10"
-
-[build-dependencies]
-cc = { version = "1.0.84", features = [ "parallel" ] }
+softgrep-languages = { path = "../softgrep-languages" }
 
 [dev-dependencies]
 trycmd = "0.14.20"

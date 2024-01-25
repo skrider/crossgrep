@@ -1,4 +1,4 @@
-use crate::language::Language;
+use softgrep_langauges::Language;
 use crate::model::Model;
 use anyhow::{Context, Result};
 use serde::ser::{SerializeStruct, Serializer};
@@ -215,7 +215,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::language::Language;
+    use softgrep_languages::Language;
     use tree_sitter::Parser;
 
     static MODEL_IDENTIFIER: &str = "roberta-base";

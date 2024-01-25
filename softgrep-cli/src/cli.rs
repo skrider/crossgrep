@@ -1,6 +1,6 @@
 use crate::extractor::Extractor;
 use crate::extractor_chooser::ExtractorChooser;
-use crate::language::Language;
+use softgrep_languages::Language;
 use crate::model::Model;
 use anyhow::{bail, Context, Error, Result};
 use clap::{crate_authors, crate_version, Arg, ArgAction, ArgMatches, Command};
