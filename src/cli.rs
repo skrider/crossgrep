@@ -1,6 +1,7 @@
 use crate::extractor::Extractor;
 use crate::extractor_chooser::ExtractorChooser;
 use crate::language::Language;
+use crate::model::Model;
 use anyhow::{bail, Context, Error, Result};
 use clap::{crate_authors, crate_version, Arg, ArgAction, ArgMatches, Command};
 use itertools::Itertools;
@@ -72,6 +73,14 @@ impl Invocation {
                     .conflicts_with("show-tree"),
             )
             .arg(
+                Arg::new("MODEL")
+                    .long("model")
+                    .short('m')
+                    .help("model to use for embedding")
+                    .conflicts_with("languages")
+                    .conflicts_with("show-tree"),
+            )
+            .arg(
                 Arg::new("PATHS")
                     .default_value(".")
                     .help("places to search for matches")
@@ -84,6 +93,22 @@ impl Invocation {
                     .value_parser(["lines", "json", "json-lines", "pretty-json"])
                     .default_value("lines")
                     .help("what format should we output lines in?")
+                    .conflicts_with("languages")
+                    .conflicts_with("show-tree"),
+            )
+            .arg(
+                Arg::new("CHUNK_SIZE")
+                    .long("chunk-size")
+                    .default_value("512")
+                    .help("how many tokens per chunk")
+                    .conflicts_with("languages")
+                    .conflicts_with("show-tree"),
+            )
+            .arg(
+                Arg::new("CHUNK_OVERLAP")
+                    .long("chunk-overlap")
+                    .default_value("64")
+                    .help("how many tokens should chunks overlap")
                     .conflicts_with("languages")
                     .conflicts_with("show-tree"),
             )
@@ -134,8 +159,13 @@ impl Invocation {
                 path: paths[0].to_owned(),
             }))
         } else {
+            let model_identifier = match matches.get_one::<String>("MODEL") {
+                Some(values) => values,
+                None => bail!("model not provided"),
+            };
+
             Ok(Self::DoQuery(QueryOpts {
-                extractors: Self::extractors(&matches)?,
+                extractors: Self::extractors(&matches, model_identifier)?,
                 paths: Self::paths(&matches)?,
                 git_ignore: !matches.contains_id("no-gitignore"),
                 format: QueryFormat::from_str(
@@ -148,11 +178,21 @@ impl Invocation {
         }
     }
 
-    fn extractors(matches: &ArgMatches) -> Result<Vec<Extractor>> {
+    fn extractors(matches: &ArgMatches, model_identifier: &String) -> Result<Vec<Extractor>> {
         let values = match matches.get_many::<String>("additional-target") {
             Some(values) => values,
             None => bail!("queries were required but not provided. This indicates an internal error and you should report it!"),
         };
+
+        let model_identifier = matches
+            .get_one::<String>("MODEL")
+            .context("model not provided")?;
+        let chunk_size = *matches
+            .get_one::<usize>("CHUNK_SIZE")
+            .context("internal error chunk size not specified")?;
+        let chunk_overlap = *matches
+            .get_one::<usize>("CHUNK_OVERLAP")
+            .context("internal error chunk overlap not specified")?;
 
         // the most common case is going to be one query, so let's allocate
         // that immediately...
@@ -193,7 +233,13 @@ impl Invocation {
                 .parse_query(&raw_query)
                 .context("could not parse combined query")?;
 
-            out.push(Extractor::new(lang, query))
+            out.push(Extractor::new(
+                lang,
+                query,
+                model_identifier,
+                chunk_size,
+                chunk_overlap,
+            ))
         }
 
         Ok(out)

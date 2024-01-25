@@ -1,9 +1,10 @@
+mod chunker;
 mod cli;
 mod extractor;
 mod extractor_chooser;
 mod language;
+mod model;
 mod tree_view;
-mod chunker;
 
 use anyhow::{bail, Context, Result};
 use cli::{Invocation, QueryFormat, QueryOpts, TreeOpts};

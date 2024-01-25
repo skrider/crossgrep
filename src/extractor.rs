@@ -1,4 +1,5 @@
 use crate::language::Language;
+use crate::model::Model;
 use anyhow::{Context, Result};
 use serde::ser::{SerializeStruct, Serializer};
 use serde::Serialize;
@@ -6,19 +7,29 @@ use std::collections::HashSet;
 use std::fmt::{self, Display};
 use std::fs;
 use std::path::{Path, PathBuf};
-use tree_sitter::{Parser, Tree, Point, Query, QueryCursor};
+use tokenizers::tokenizer::Tokenizer;
+use tree_sitter::{Parser, Point, Query, QueryCursor, Tree};
 
 #[derive(Debug)]
 pub struct Extractor {
     language: Language,
     ts_language: tree_sitter::Language,
     query: Query,
+    tokenizer: Tokenizer,
     captures: Vec<String>,
     ignores: HashSet<usize>,
+    chunk_size: usize,
+    chunk_overlap: usize,
 }
 
 impl Extractor {
-    pub fn new(language: Language, query: Query) -> Extractor {
+    pub fn new(
+        language: Language,
+        query: Query,
+        tokenizer: &String,
+        chunk_size: usize,
+        chunk_overlap: usize,
+    ) -> Extractor {
         let captures = query.capture_names().to_vec();
 
         let mut ignores = HashSet::default();
@@ -32,12 +43,18 @@ impl Extractor {
             eprintln!("Warning: query only has ignored captures. No results will be printed.");
         }
 
+        let tokenizer =
+            Tokenizer::from_pretrained(tokenizer, None).expect("could not load tokenizer");
+
         Extractor {
             ts_language: language.language(),
+            tokenizer,
             language,
             query,
             captures,
             ignores,
+            chunk_size,
+            chunk_overlap,
         }
     }
 
@@ -65,13 +82,9 @@ impl Extractor {
             .set_language(self.ts_language)
             .context("could not set language")?;
 
-        let line_ct = source.iter().fold(0, |acc, c| {
-            if *c == '\n' as u8 {
-                acc + 1
-            } else {
-                acc
-            }
-        });
+        let line_ct = source
+            .iter()
+            .fold(0, |acc, c| if *c == '\n' as u8 { acc + 1 } else { acc });
 
         let tree = parser
             .parse(source, None)
@@ -82,7 +95,7 @@ impl Extractor {
             .context(
                 "could not parse to a tree. This is an internal error and should be reported.",
             )?;
-        
+
         let mut node_terminals = vec![0; line_ct];
         // construct map of line numbers to nodes ending on that line
         for node in TreeWalker::new(&tree) {
@@ -211,7 +224,16 @@ impl<'walker> Iterator for TreeWalker<'walker> {
     type Item = tree_sitter::Node<'walker>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        None
+        if self.cursor.goto_first_child() {
+            Some(self.cursor.node())
+        } else {
+            while !self.cursor.goto_next_sibling() {
+                if !self.cursor.goto_parent() {
+                    ()
+                }
+            }
+            Some(self.cursor.node())
+        }
     }
 }
 
@@ -221,13 +243,17 @@ mod tests {
     use crate::language::Language;
     use tree_sitter::Parser;
 
+    static MODEL_IDENTIFIER: String = String::from("roberta-base");
+    static CHUNK_SIZE: usize = 512;
+    static CHUNK_OVERLAP: usize = 128;
+
     #[test]
     fn test_matches_are_extracted() {
         let lang = Language::Elm;
         let query = lang
             .parse_query("(import_clause (upper_case_qid)@import)")
             .unwrap();
-        let extractor = Extractor::new(lang, query);
+        let extractor = Extractor::new(lang, query, &MODEL_IDENTIFIER, CHUNK_SIZE, CHUNK_OVERLAP);
 
         let extracted = extractor
             .extract_from_text(None, b"import Html.Styled", &mut Parser::new())
@@ -247,7 +273,7 @@ mod tests {
         let query = lang
             .parse_query("(import_clause (upper_case_qid)@_import)")
             .unwrap();
-        let extractor = Extractor::new(lang, query);
+        let extractor = Extractor::new(lang, query, &MODEL_IDENTIFIER, CHUNK_SIZE, CHUNK_OVERLAP);
 
         let extracted = extractor
             .extract_from_text(None, b"import Html.Styled", &mut Parser::new())
@@ -263,7 +289,7 @@ mod tests {
         let query = lang
             .parse_query("(call_expression (identifier)@_fn (arguments . (string)@import .) (#eq? @_fn require))")
             .unwrap();
-        let extractor = Extractor::new(lang, query);
+        let extractor = Extractor::new(lang, query, &MODEL_IDENTIFIER, CHUNK_SIZE, CHUNK_OVERLAP);
 
         let extracted = extractor
             .extract_from_text(None, b"let foo = require(\"foo.js\")", &mut Parser::new())

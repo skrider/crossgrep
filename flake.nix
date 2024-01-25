@@ -145,6 +145,9 @@
               rust-analyzer
 
               updateVendor
+                
+              # required by tokenizers
+              openssl
 
               # for some reason this seems to be required, especially on macOS
               libiconv
