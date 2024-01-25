@@ -29,6 +29,24 @@ impl Chunker {
     fn chunk_node(&self, source: &[u8], node: &Node) -> Result<Vec<ExtractedChunk>> {
         let source = &source[node.byte_range()];
 
+        let source_str = std::str::from_utf8(source).expect("invalid utf-8");
+        let encoding = match self.tokenizer.encode(source_str, false) {
+            Ok(encoding) => encoding,
+            Err(err) => bail!("Could not encode source: {}", err),
+        };
+        let ids = encoding.get_ids();
+
+        if ids.len() < self.chunk_size - self.model.special_tokens() {
+            let mut tokens = Vec::with_capacity(self.chunk_size);
+            self.model.prepare_input_ids(&mut tokens, ids);
+
+            return Ok(vec![ExtractedChunk {
+                ids: tokens,
+                start_byte: 0,
+                end_byte: source.len(),
+            }]);
+        }
+
         let line_ct = source
             .iter()
             .fold(0, |acc, c| if *c == '\n' as u8 { acc + 1 } else { acc });
@@ -44,12 +62,6 @@ impl Chunker {
                 node_terminals[end_line] += 1;
             }
         }
-
-        let source_str = std::str::from_utf8(source).expect("invalid utf-8");
-        let encoding = match self.tokenizer.encode(source_str, false) {
-            Ok(encoding) => encoding,
-            Err(err) => bail!("Could not encode source: {}", err),
-        };
 
         let mut newline_token_indices = Vec::with_capacity(line_ct + 1);
         // sentinel newline at zero
@@ -69,7 +81,6 @@ impl Chunker {
             }
         }
 
-        let ids = encoding.get_ids();
         let mut chunk_line_start = 0;
         let mut chunk_line_end = 0;
 
