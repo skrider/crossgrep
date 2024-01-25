@@ -1,12 +1,13 @@
 use crate::model::Model;
 use anyhow::{bail, Result};
-use tokenizers::tokenizer::{Encoding, Tokenizer};
-use tree_sitter::{Node, TreeCursor};
+use tokenizers::tokenizer::Tokenizer;
+use tree_sitter::Node;
 
 pub struct Chunker {
     tokenizer: Tokenizer,
     model: Model,
     chunk_size: usize,
+    inner_chunk_size: usize,
     chunk_overlap: usize,
     lookbehind_lines: usize,
 }
@@ -17,8 +18,11 @@ impl Chunker {
             model,
             tokenizer: model.tokenizer(),
             chunk_size: model.chunk_size(),
+            inner_chunk_size: model.chunk_size()
+                - model.chunk_overlap() * 2
+                - model.special_tokens(),
             chunk_overlap: model.chunk_overlap(),
-            lookbehind_lines: model.chunk_size().log2(),
+            lookbehind_lines: model.chunk_size().ilog2() as usize,
         }
     }
 
@@ -41,7 +45,8 @@ impl Chunker {
             }
         }
 
-        let encoding = match self.tokenizer.encode(String::from_utf8(source).expect("invalid utf8"), false) {
+        let source_str = std::str::from_utf8(source).expect("invalid utf-8");
+        let encoding = match self.tokenizer.encode(source_str, false) {
             Ok(encoding) => encoding,
             Err(err) => bail!("Could not encode source: {}", err),
         };
@@ -55,6 +60,11 @@ impl Chunker {
                     Some(i) => i,
                     None => bail!("Could not find token index for newline"),
                 };
+
+                if token_index - newline_token_indices.last().unwrap() > self.inner_chunk_size {
+                    bail!("line too long");
+                }
+
                 newline_token_indices.push(token_index);
             }
         }
@@ -69,21 +79,32 @@ impl Chunker {
         while chunk_line_end < line_ct {
             chunk_line_end += 1;
             if newline_token_indices[chunk_line_end] - newline_token_indices[chunk_line_start]
-                > self.chunk_size - self.chunk_overlap + is_first_chunk * self.chunk_overlap
+                > self.chunk_size - self.chunk_overlap - is_first_chunk * self.chunk_overlap
             {
                 let min_end_point =
                     std::cmp::min(chunk_line_start, chunk_line_end - self.lookbehind_lines);
-                let chunk_line_end = node_terminals[min_end_point..chunk_line_end]
+                let chunk_line_end = node_terminals[min_end_point..chunk_line_end - 1]
                     .iter()
                     .enumerate()
-                    .fold((0, -1), |acc, (i, v)| if *v > acc.1 { (i, *v) } else { acc })
-                    .0;
+                    .fold(
+                        (0, -1),
+                        |acc, (i, v)| if *v >= acc.1 { (i, *v) } else { acc },
+                    )
+                    .0
+                    + min_end_point;
 
-                let chunk_start = std::cmp::max(0, newline_token_indices[chunk_line_start] + 1 - self.chunk_overlap);
-                let chunk_end = std::cmp::min(ids.len(), newline_token_indices[chunk_line_end] + self.chunk_overlap);
+                let chunk_start = std::cmp::max(
+                    0,
+                    newline_token_indices[chunk_line_start] + 1 - self.chunk_overlap,
+                );
+                let chunk_end = std::cmp::min(
+                    ids.len() - 1,
+                    newline_token_indices[chunk_line_end] + self.chunk_overlap,
+                );
 
-                let mut tokens = &ids[chunk_start..chunk_end].iter().collect();
-                self.model.postprocess_tokens(&tokens);
+                let mut tokens = Vec::with_capacity(self.chunk_size);
+                self.model
+                    .prepare_input_ids(&mut tokens, &ids[chunk_start..chunk_end]);
 
                 let start_byte = encoding
                     .token_to_chars(chunk_start)
@@ -101,14 +122,44 @@ impl Chunker {
                     start_byte,
                     end_byte,
                 });
+
+                is_first_chunk = 0;
+                chunk_line_start = chunk_line_end;
             }
         }
+
+        let chunk_start = std::cmp::max(
+            0,
+            newline_token_indices[chunk_line_start] + 1 - self.chunk_overlap,
+        );
+        let chunk_end = ids.len() - 1;
+
+        let mut tokens = Vec::with_capacity(self.chunk_size);
+        self.model
+            .prepare_input_ids(&mut tokens, &ids[chunk_start..chunk_end]);
+
+        let start_byte = encoding
+            .token_to_chars(chunk_start)
+            .expect("token out of range")
+            .1
+             .0;
+        let end_byte = encoding
+            .token_to_chars(chunk_end)
+            .expect("token out of range")
+            .1
+             .0;
+
+        chunks.push(ExtractedChunk {
+            ids: tokens,
+            start_byte,
+            end_byte,
+        });
 
         Ok(chunks)
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct ExtractedChunk {
     pub ids: Vec<u32>,
     pub start_byte: usize,

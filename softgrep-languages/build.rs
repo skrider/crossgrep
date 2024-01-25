@@ -85,7 +85,7 @@ fn main() {
         .file(haskell_dir.join("parser.c"))
         .compile("tree-sitter-haskell");
 
-    println!("cargo:rerun-if-changed=vendor/tree-sitter-haskell/src/scanner.cc");
+    println!("cargo:rerun-if-changed=vendor/tree-sitter-haskell/src/scanner.c");
     cc::Build::new()
         .include(&haskell_dir)
         .warnings(false)

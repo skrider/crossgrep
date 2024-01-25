@@ -13,11 +13,19 @@ impl Model {
         }
     }
 
-    pub fn postprocess_tokens(&self, tokens: &mut Vec<u32>) {
+    pub fn prepare_input_ids(&self, input_ids: &mut Vec<u32>, ids: &[u32]) {
         match self {
             Model::CodeBert => {
-                tokens.insert(0, 0);
-                tokens.push(2);
+                assert!(ids.len() <= self.chunk_size() - self.special_tokens());
+                input_ids.push(0);
+                for i in ids {
+                    input_ids.push(*i);
+                }
+                input_ids.push(2);
+                for i in 0..(self.chunk_size() - self.special_tokens() - ids.len()) {
+                    input_ids.push(1);
+                }
+                assert!(input_ids.len() == self.chunk_size());
             }
         }
     }
