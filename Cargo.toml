@@ -1,5 +1,5 @@
 [workspace]
 members = [
-    "softgrep-cli",
-    "softgrep-languages",
+    "softgrep",
+    "softgrep-sys",
 ]

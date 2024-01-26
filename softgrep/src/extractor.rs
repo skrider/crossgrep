@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use serde::ser::{SerializeStruct, Serializer};
 use serde::Serialize;
-use softgrep_languages::Language;
+use softgrep_sys::Language;
 use std::collections::HashSet;
 use std::fmt::{self, Display};
 use std::fs;
@@ -194,7 +194,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use softgrep_languages::Language;
+    use softgrep_sys::Language;
     use tree_sitter::Parser;
 
     #[test]
