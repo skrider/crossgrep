@@ -21,6 +21,8 @@ use tree_sitter::Parser;
 fn main() {
     let mut buffer = BufWriter::new(io::stdout());
 
+    tokenizers::utils::parallelism::set_parallelism(false);
+
     if let Err(error) = try_main(env::args().collect(), &mut buffer) {
         if let Some(err) = error.downcast_ref::<io::Error>() {
             // a broken pipe is totally normal and fine. It's what we get when
