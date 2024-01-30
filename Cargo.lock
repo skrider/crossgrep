@@ -313,6 +313,40 @@ dependencies = [
 ]
 
 [[package]]
+name = "crossgrep"
+version = "2.5.0-pre"
+dependencies = [
+ "anyhow",
+ "bump_alloc",
+ "clap",
+ "crossbeam",
+ "crossgrep-sys",
+ "ignore",
+ "itertools 0.12.0",
+ "ort",
+ "rayon",
+ "serde",
+ "serde_json",
+ "strum",
+ "strum_macros",
+ "tokenizers",
+ "tree-sitter",
+ "trycmd",
+]
+
+[[package]]
+name = "crossgrep-sys"
+version = "2.5.0-pre"
+dependencies = [
+ "anyhow",
+ "cc",
+ "itertools 0.12.0",
+ "strum",
+ "strum_macros",
+ "tree-sitter",
+]
+
+[[package]]
 name = "crunchy"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1433,40 +1467,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "78ccde059aad940984ff696fe8c280900f7ea71a6fb45fce65071a3f2c40b667"
 dependencies = [
  "anstream",
-]
-
-[[package]]
-name = "softgrep"
-version = "2.5.0-pre"
-dependencies = [
- "anyhow",
- "bump_alloc",
- "clap",
- "crossbeam",
- "ignore",
- "itertools 0.12.0",
- "ort",
- "rayon",
- "serde",
- "serde_json",
- "softgrep-sys",
- "strum",
- "strum_macros",
- "tokenizers",
- "tree-sitter",
- "trycmd",
-]
-
-[[package]]
-name = "softgrep-sys"
-version = "2.5.0-pre"
-dependencies = [
- "anyhow",
- "cc",
- "itertools 0.12.0",
- "strum",
- "strum_macros",
- "tree-sitter",
 ]
 
 [[package]]

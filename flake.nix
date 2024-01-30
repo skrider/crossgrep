@@ -96,21 +96,21 @@
           mkdir vendor
 
           set -x
-          ln -s ${inputs.tree-sitter-c} softgrep-sys/vendor/tree-sitter-c
-          ln -s ${inputs.tree-sitter-cpp} softgrep-sys/vendor/tree-sitter-cpp
-          ln -s ${inputs.tree-sitter-elixir} softgrep-sys/vendor/tree-sitter-elixir
-          ln -s ${inputs.tree-sitter-elm} softgrep-sys/vendor/tree-sitter-elm
-          ln -s ${inputs.tree-sitter-go} softgrep-sys/vendor/tree-sitter-go
-          ln -s ${inputs.tree-sitter-haskell} softgrep-sys/vendor/tree-sitter-haskell
-          ln -s ${inputs.tree-sitter-java} softgrep-sys/vendor/tree-sitter-java
-          ln -s ${inputs.tree-sitter-javascript} softgrep-sys/vendor/tree-sitter-javascript
-          ln -s ${inputs.tree-sitter-markdown} softgrep-sys/vendor/tree-sitter-markdown
-          ln -s ${inputs.tree-sitter-php} softgrep-sys/vendor/tree-sitter-php
-          ln -s ${inputs.tree-sitter-python} softgrep-sys/vendor/tree-sitter-python
-          ln -s ${inputs.tree-sitter-ruby} softgrep-sys/vendor/tree-sitter-ruby
-          ln -s ${inputs.tree-sitter-rust} softgrep-sys/vendor/tree-sitter-rust
-          ln -s ${inputs.tree-sitter-typescript} softgrep-sys/vendor/tree-sitter-typescript
-          ln -s ${inputs.tree-sitter-nix} softgrep-sys/vendor/tree-sitter-nix
+          ln -s ${inputs.tree-sitter-c} crossgrep-sys/vendor/tree-sitter-c
+          ln -s ${inputs.tree-sitter-cpp} crossgrep-sys/vendor/tree-sitter-cpp
+          ln -s ${inputs.tree-sitter-elixir} crossgrep-sys/vendor/tree-sitter-elixir
+          ln -s ${inputs.tree-sitter-elm} crossgrep-sys/vendor/tree-sitter-elm
+          ln -s ${inputs.tree-sitter-go} crossgrep-sys/vendor/tree-sitter-go
+          ln -s ${inputs.tree-sitter-haskell} crossgrep-sys/vendor/tree-sitter-haskell
+          ln -s ${inputs.tree-sitter-java} crossgrep-sys/vendor/tree-sitter-java
+          ln -s ${inputs.tree-sitter-javascript} crossgrep-sys/vendor/tree-sitter-javascript
+          ln -s ${inputs.tree-sitter-markdown} crossgrep-sys/vendor/tree-sitter-markdown
+          ln -s ${inputs.tree-sitter-php} crossgrep-sys/vendor/tree-sitter-php
+          ln -s ${inputs.tree-sitter-python} crossgrep-sys/vendor/tree-sitter-python
+          ln -s ${inputs.tree-sitter-ruby} crossgrep-sys/vendor/tree-sitter-ruby
+          ln -s ${inputs.tree-sitter-rust} crossgrep-sys/vendor/tree-sitter-rust
+          ln -s ${inputs.tree-sitter-typescript} crossgrep-sys/vendor/tree-sitter-typescript
+          ln -s ${inputs.tree-sitter-nix} crossgrep-sys/vendor/tree-sitter-nix
         '';
       in rec {
         # `nix build`

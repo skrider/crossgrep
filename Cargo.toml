@@ -1,5 +1,5 @@
 [workspace]
 members = [
-    "softgrep",
-    "softgrep-sys",
+    "crossgrep",
+    "crossgrep-sys",
 ]

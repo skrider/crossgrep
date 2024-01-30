@@ -1,5 +1,5 @@
 [package]
-name = "softgrep"
+name = "crossgrep"
 version = "2.5.0-pre"
 authors = ["Stephen Krider <skrider@berkeley.edu>"]
 edition = "2018"
@@ -18,7 +18,7 @@ strum = "0.25"
 strum_macros = "0.25"
 tokenizers = { version = "0.15.1", features = [ "http" ] }
 tree-sitter = "0.20.10"
-softgrep-sys = { path = "../softgrep-sys" }
+crossgrep-sys = { path = "../crossgrep-sys" }
 ort = "2.0.0-alpha.4"
 
 [dev-dependencies]

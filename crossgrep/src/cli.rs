@@ -4,7 +4,7 @@ use crate::model::Model;
 use anyhow::{bail, Context, Error, Result};
 use clap::{crate_authors, crate_version, Arg, ArgAction, ArgMatches, Command};
 use itertools::Itertools;
-use softgrep_sys::Language;
+use crossgrep_sys::Language;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -100,7 +100,7 @@ impl Invocation {
                 Arg::new("languages")
                     .long("languages")
                     .action(ArgAction::SetTrue)
-                    .help("print the language names softgrep knows about")
+                    .help("print the language names crossgrep knows about")
                     .conflicts_with("additional-target")
                     .conflicts_with("show-tree"),
             )

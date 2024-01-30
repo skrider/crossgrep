@@ -9,7 +9,7 @@ use anyhow::{bail, Context, Result};
 use cli::{Invocation, QueryFormat, QueryOpts, TreeOpts};
 use crossbeam::channel;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
-use softgrep_sys::Language;
+use crossgrep_sys::Language;
 use std::env;
 use std::fs;
 use std::io::{self, BufWriter, Write};
