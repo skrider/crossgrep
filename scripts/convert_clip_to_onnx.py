@@ -1,5 +1,4 @@
 from multiprocessing import process
-from combined_vision_tower import CombinedVisionTower
 from transformers import CLIPImageProcessor
 import torch
 
@@ -13,7 +12,7 @@ import requests
 from PIL import Image
 from io import BytesIO
 
-model_name = "openai/clip-vit-large-patch14"
+model_name = "microsoft/codebert-base"
 image_preprocessor = CLIPImageProcessor.from_pretrained(model_name)
 model = CombinedVisionTower(model_name)
 
