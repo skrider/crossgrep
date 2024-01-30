@@ -1,5 +1,0 @@
-transformers
-onnx
-onnxruntime
-torch==2.1.2
-Pillow
