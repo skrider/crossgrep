@@ -116,8 +116,12 @@
         # `nix build`
         packages.tree-grepper = naersk-lib.buildPackage {
           root = ./.;
-          buildInputs = [ pkgs.libiconv pkgs.rustPackages.clippy ]
-            ++ darwinInputs;
+          buildInputs = with pkgs; [ 
+            libiconv 
+            rustPackages.clippy
+            openssl
+            pkg-config
+          ] ++ darwinInputs;
 
           preBuildPhases = [ "vendorPhase" ];
           vendorPhase = "${updateVendor}/bin/update-vendor";
@@ -146,8 +150,9 @@
 
               updateVendor
                 
-              # required by tokenizers
+              # required by openssl-sys
               openssl
+              pkg-config
 
               # for some reason this seems to be required, especially on macOS
               libiconv
